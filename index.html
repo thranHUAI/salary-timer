@@ -3,100 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>打工人搞钱仪表盘</title>
+    <title>打工人搞钱双仪表盘</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 30px 0; background-color: #f4f4f9; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 320px; text-align: center; margin-bottom: 20px; }
-        h2 { margin-top: 0; color: #333; font-size: 20px;}
-        .input-group { margin: 12px 0; display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: #555;}
-        input { width: 80px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-        .info-panel { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 14px; color: #666; }
-        .highlight { color: #d93025; font-weight: bold; font-size: 16px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 30px; background-color: #f4f4f9; margin: 0; }
         
-        /* 进度条样式 */
+        /* 设置卡片 */
+        .card-setup { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 680px; text-align: center; margin-bottom: 30px; }
+        .setup-header { display: flex; align-items: center; justify-content: center; margin-bottom: 20px;}
+        h2 { margin: 0; color: #333; font-size: 20px;}
+        .inputs-container { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;}
+        .input-group { display: flex; align-items: center; font-size: 15px; color: #555; width: 45%; }
+        .input-group label { width: 140px; text-align: right; margin-right: 10px; }
+        input { width: 100px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+        
+        button { margin-top: 25px; width: 100%; padding: 15px; background-color: #5aa469; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #488a55; }
+
+        /* 仪表盘容器 */
+        #dashboards { display: none; width: 100%; max-width: 900px; justify-content: space-between; gap: 20px; flex-direction: row;}
+        .card-dash { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 48%; text-align: center;}
+        
+        /* 左侧：今日进度 */
+        .highlight { color: #d93025; font-weight: bold; font-size: 16px; }
         .progress-container { width: 100%; background-color: #e9ecef; border-radius: 10px; margin-top: 20px; height: 24px; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
         .progress-bar { height: 100%; background-color: #5aa469; width: 0%; transition: width 0.1s linear; }
         .progress-text { position: absolute; width: 100%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; color: #333; top: 0; left: 0; }
-        
         .countdown { margin-top: 15px; font-size: 16px; font-weight: bold; color: #1a73e8; }
         .money-display { font-size: 42px; font-weight: bold; color: #d93025; margin-top: 10px; font-family: monospace; }
         
-        button { margin-top: 15px; width: 100%; padding: 12px; background-color: #5aa469; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:hover { background-color: #488a55; }
+        /* 右侧：小猪存钱罐 */
+        #jarFillSVG { width: 100%; height: 100%; position: absolute; bottom: 0; left: 0; transform: translateY(100%); transition: transform 0.5s linear;}
+        .jar-outer { position: relative; width: 180px; height: 180px; margin: 20px auto 0; overflow: hidden; border-radius: 50%;}
+        .jar-piggy-mask { position: relative; width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); overflow: hidden;}
+        /* SVG 遮罩层 */
+        .jar-overlay-mask { width: 100%; height: 100%; position: absolute; top: 0; left: 0; mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 0 C22.38 0 0 22.38 0 50 C0 77.62 22.38 100 50 100 L 50 100 C 77.62 100 100 77.62 100 50 C 100 22.38 77.62 0 50 0 M50 15 A 35 35 0 1 0 50 85 A 35 35 0 1 0 50 15"/></svg>'); mask-size: 100%; -webkit-mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 0 C22.38 0 0 22.38 0 50 C0 77.62 22.38 100 50 100 L 50 100 C 77.62 100 100 77.62 100 50 C 100 22.38 77.62 0 50 0 M50 15 A 35 35 0 1 0 50 85 A 35 35 0 1 0 50 15"/></svg>'); -webkit-mask-size: 100%; overflow: hidden;}
+        
+        /* 半透明背景（未达到） */
+        .piggy-empty { width: 100%; height: 100%; position: absolute; background-color: rgba(255, 182, 193, 0.4); mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 15 A 35 35 0 1 1 50 85 A 35 35 0 1 1 50 15 M 50 15"/></svg>'); mask-size: 100%; -webkit-mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 15 A 35 35 0 1 1 50 85 A 35 35 0 1 1 50 15 M 50 15"/></svg>'); -webkit-mask-size: 100%; }
+        /* 填充层和波浪 */
+        .piggy-filled { width: 100%; height: 100%; position: absolute; background-color: #FFB6C1; mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 15 A 35 35 0 1 1 50 85 A 35 35 0 1 1 50 15 M 50 15"/></svg>'); mask-size: 100%; -webkit-mask-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 15 A 35 35 0 1 1 50 85 A 35 35 0 1 1 50 15 M 50 15"/></svg>'); -webkit-mask-size: 100%; overflow: hidden;}
+        
+        /* 水波动动画路径 */
+        .wave-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; transform: translateY(100%); transition: transform 0.5s linear; }
+        .wave { fill: #FFB6C1; animation: waveMovement 2s linear infinite; }
+        @keyframes waveMovement {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
 
-        /* 玻璃存钱罐样式 */
-        .jar-container { display: flex; justify-content: center; margin-top: 20px; position: relative;}
-        .glass-jar {
-            width: 140px; height: 180px; 
-            border: 4px solid rgba(200, 200, 200, 0.5); 
-            border-bottom-width: 8px;
-            border-radius: 20px 20px 30px 30px; 
-            background: rgba(255, 255, 255, 0.4); 
-            backdrop-filter: blur(5px);
-            position: relative; 
-            overflow: hidden; 
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        .gold-display { font-size: 32px; font-weight: bold; color: #fb8500; margin-top: 10px; font-family: monospace; }
+        @media (max-width: 700px) {
+            .card-setup { width: 90%; }
+            .input-group { width: 100%; }
+            #dashboards { flex-direction: column; width: 100%; align-items: center;}
+            .card-dash { width: 90%; margin-bottom: 20px;}
         }
-        .jar-lid { width: 90px; height: 15px; background: #bbb; border-radius: 5px 5px 0 0; position: absolute; top: -15px; left: 25px; }
-        .gold-fill {
-            position: absolute; bottom: 0; left: 0; width: 100%; 
-            background: linear-gradient(to top, #ffb703, #fb8500); 
-            height: 0%; transition: height 0.5s linear;
-            display: flex; align-items: flex-start; justify-content: center; overflow: hidden;
-        }
-        .coins { font-size: 24px; line-height: 1; margin-top: 5px; opacity: 0.8;}
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>⚙️ 参数设置</h2>
-        <div class="input-group">
-            <label>本月排班天数：</label>
-            <input type="number" id="days" value="23" min="1" max="31">
-        </div>
-        <div class="input-group">
-            <label>月薪 (元)：</label>
-            <input type="number" id="salary" value="13500" min="0">
-        </div>
-        <div class="input-group">
-            <label>每月发薪日：</label>
-            <input type="number" id="paydayNum" value="15" min="1" max="31">
+    <div class="card-setup">
+        <div class="setup-header"><h2>⚙️ 参数设置</h2></div>
+        <div class="inputs-container">
+            <div class="input-group"><label>本月月份：</label><input type="number" id="monthInput" min="1" max="12"></div>
+            <div class="input-group"><label>本月排班天数：</label><input type="number" id="days" min="1" max="31"></div>
+            <div class="input-group"><label>月薪 (元)：</label><input type="number" id="salary" min="0"></div>
+            <div class="input-group"><label>每月发薪日：</label><input type="number" id="paydayNum" min="1" max="31"></div>
         </div>
         <button id="startBtn">开启搞钱模式</button>
     </div>
 
-    <div id="dashboards" style="display: none; width: 100%; align-items: center; flex-direction: column;">
+    <div id="dashboards">
         
-        <div class="card">
+        <div class="card-dash">
             <h2>⏱️ 今日搞钱进度</h2>
-            <div class="info-panel">今日日薪估算：<span class="highlight" id="dailySalary">0.00</span> 元</div>
+            <div style="font-size:14px; color:#666;">今日日薪估算：<span class="highlight" id="dailySalary">0.00</span> 元</div>
             
             <div class="progress-container">
                 <div class="progress-bar" id="progressBar"></div>
                 <div class="progress-text" id="progressText">0%</div>
             </div>
             
-            <div class="countdown" id="countdownDisplay">计算中...</div>
+            <div class="countdown" id="countdownDisplay">⏳ 距下班还有: --:--:--</div>
             
             <div style="margin-top: 20px; color: #555; font-size: 14px;">今日已变现：</div>
             <div class="money-display" id="moneyDisplay">0.0000</div>
         </div>
 
-        <div class="card">
+        <div class="card-dash">
             <h2>🏺 月度财富积累</h2>
-            <div class="countdown" id="paydayDisplay" style="color: #fb8500;">距离发薪日还有：计算中...</div>
+            <div class="countdown" id="paydayDisplay" style="color: #fb8500;">💰 距发薪日还有：-- 天</div>
             
-            <div class="jar-container">
-                <div class="jar-lid"></div>
-                <div class="glass-jar">
-                    <div class="gold-fill" id="jarFill">
-                        <div class="coins">🪙🪙🪙</div>
+            <div class="jar-outer">
+                <div class="jar-piggy-mask">
+                    <div class="jar-overlay-mask">
+                        <div class="piggy-empty"></div>
+                        <div class="wave-container" id="waveFill">
+                            <svg class="wave" viewBox="0 0 200 100" preserveAspectRatio="none">
+                                <path d="M0,50 C50,0 150,100 200,50 L200,100 L0,100 Z" />
+                                <path d="M0,50 C50,100 150,0 200,50 L200,100 L0,100 Z" transform="translateX(100)"/>
+                            </svg>
+                        </div>
                     </div>
                 </div>
+                <div style="font-size:32px; position:absolute; top:-15px; left: calc(50% - 16px);">🪙</div>
             </div>
 
             <div style="margin-top: 20px; color: #555; font-size: 14px;">本月已累积金额：</div>
-            <div class="money-display" id="monthlyMoneyDisplay" style="color: #fb8500;">0.00</div>
+            <div class="gold-display" id="monthlyMoneyDisplay">0.00</div>
         </div>
 
     </div>
@@ -175,8 +188,9 @@
                 let monthPercent = (monthPassedMs / monthTotalMs) * 100;
                 if(monthPercent > 100) monthPercent = 100;
 
-                // 更新存钱罐高度和月度累计金额
-                document.getElementById('jarFill').style.height = monthPercent + '%';
+                // 更新存钱罐填充高度和月度累计金额
+                // 使用 translateY(0%) 到 translateY(100%) 控制高度，0% 是满，100% 是空
+                document.getElementById('waveFill').style.transform = `translateY(${100 - monthPercent}%)`;
                 const monthlyEarned = (monthPercent / 100) * salary;
                 document.getElementById('monthlyMoneyDisplay').innerText = monthlyEarned.toFixed(2);
 
