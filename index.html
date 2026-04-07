@@ -3,44 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>薪水实时累加器</title>
+    <title>打工人搞钱仪表盘</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 100px; background-color: #f4f4f9; }
-        .card { background: white; padding: 30px 50px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-        .input-group { margin: 15px 0; display: flex; justify-content: space-between; width: 280px; font-size: 16px;}
-        input { width: 100px; padding: 4px; text-align: center; }
-        button { margin-top: 20px; padding: 10px 30px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; }
-        button:hover { background-color: #218838; }
-        .result { margin-top: 40px; font-size: 20px; color: #555; }
-        .money { font-size: 54px; font-weight: bold; color: #dc3545; margin-top: 10px; font-family: monospace; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; background-color: #f4f4f9; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 320px; text-align: center; }
+        h2 { margin-top: 0; color: #333; }
+        .input-group { margin: 12px 0; display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: #555;}
+        input { width: 90px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+        .info-panel { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; font-size: 14px; color: #666; }
+        .highlight { color: #d93025; font-weight: bold; font-size: 16px; }
+        
+        /* 进度条样式 */
+        .progress-container { width: 100%; background-color: #e9ecef; border-radius: 10px; margin-top: 25px; height: 24px; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+        .progress-bar { height: 100%; background-color: #34a853; width: 0%; transition: width 0.1s linear; }
+        .progress-text { position: absolute; width: 100%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; color: #333; top: 0; left: 0; }
+        
+        .countdown { margin-top: 20px; font-size: 18px; font-weight: bold; color: #1a73e8; }
+        .money-display { font-size: 48px; font-weight: bold; color: #d93025; margin-top: 10px; font-family: monospace; }
+        
+        button { margin-top: 20px; width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #1557b0; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>⏱️ 搞钱进度条</h2>
+        <h2>⏱️ 搞钱仪表盘</h2>
+        
         <div class="input-group">
             <label>当前月份：</label>
             <input type="number" id="month" value="4" min="1" max="12">
         </div>
         <div class="input-group">
-            <label>本月工作天数：</label>
-            <input type="number" id="days" value="21" min="1" max="31">
+            <label>本月排班天数：</label>
+            <input type="number" id="days" value="23" min="1" max="31">
         </div>
         <div class="input-group">
             <label>月薪 (元)：</label>
-            <input type="number" id="salary" value="10000" min="0">
+            <input type="number" id="salary" value="13500" min="0">
         </div>
-        <button id="startBtn">开始打工</button>
 
-        <div class="result">
-            本次运行已赚：
-            <div class="money" id="moneyDisplay">0.0000</div>
+        <button id="startBtn">开始计算今日收益</button>
+
+        <div id="dashboard" style="display: none;">
+            <div class="info-panel">
+                按照设定，你今天的日薪为：<span class="highlight" id="dailySalary">0.00</span> 元
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-text" id="progressText">0%</div>
+            </div>
+
+            <div class="countdown" id="countdownDisplay">距离下班还有：计算中...</div>
+            
+            <div style="margin-top: 25px; color: #555; font-size: 16px;">今日时间已变现：</div>
+            <div class="money-display" id="moneyDisplay">0.0000</div>
         </div>
     </div>
 
     <script>
         let timer;
-        let earned = 0;
         
         document.getElementById('startBtn').addEventListener('click', function() {
             const days = parseFloat(document.getElementById('days').value);
@@ -51,34 +73,65 @@
                 return;
             }
 
-            // 假设每天工作 8 小时，计算每秒薪资
-            const secondsPerDay = 8 * 3600;
-            const moneyPerSecond = salary / (days * secondsPerDay);
+            // 计算日薪
+            const dailySalary = salary / days;
+            document.getElementById('dailySalary').innerText = dailySalary.toFixed(2);
             
-            // 为了让数字滚动得更丝滑，每 0.05 秒（50毫秒）刷新一次
-            const refreshRate = 50; 
-            const moneyPerTick = moneyPerSecond * (refreshRate / 1000);
+            // 显示仪表盘，隐藏按钮
+            document.getElementById('dashboard').style.display = 'block';
+            this.innerText = "正在实时监控你的财富...";
+            this.style.backgroundColor = "#34a853";
+            this.disabled = true;
 
-            const display = document.getElementById('moneyDisplay');
-            const btn = document.getElementById('startBtn');
-            
-            // 暂停/继续逻辑
-            if (timer) {
-                clearInterval(timer);
-                btn.innerText = "继续打工";
-                btn.style.backgroundColor = "#007bff";
-                timer = null;
-                return;
-            }
+            // 如果已有定时器则清除
+            if (timer) clearInterval(timer);
 
-            btn.innerText = "摸鱼暂停";
-            btn.style.backgroundColor = "#ffc107";
-            
+            // 每 50 毫秒刷新一次数据
             timer = setInterval(() => {
-                earned += moneyPerTick;
-                // 保留4位小数，看着钱一直跳动
-                display.innerText = earned.toFixed(4); 
-            }, refreshRate);
+                const now = new Date();
+                
+                // 设定上班时间 09:00:00 和下班时间 17:30:00
+                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
+                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 30, 0);
+                
+                const totalWorkMs = endTime - startTime; // 全天工作总毫秒数
+                let elapsedMs = now - startTime;         // 今天已度过的工作毫秒数
+
+                // 边界处理：9点前和17点半后
+                if (elapsedMs < 0) elapsedMs = 0;
+                if (elapsedMs > totalWorkMs) elapsedMs = totalWorkMs;
+
+                // 1. 计算今日已赚金额
+                const earnedToday = (elapsedMs / totalWorkMs) * dailySalary;
+                document.getElementById('moneyDisplay').innerText = earnedToday.toFixed(4);
+
+                // 2. 更新进度条
+                const progressPercent = (elapsedMs / totalWorkMs) * 100;
+                document.getElementById('progressBar').style.width = progressPercent + '%';
+                document.getElementById('progressText').innerText = progressPercent.toFixed(1) + '%';
+
+                // 3. 计算下班倒计时
+                let remainMs = endTime - now;
+                if (remainMs <= 0) {
+                    document.getElementById('countdownDisplay').innerText = "🎉 已经下班啦！";
+                    document.getElementById('countdownDisplay').style.color = "#34a853";
+                } else if (now < startTime) {
+                    document.getElementById('countdownDisplay').innerText = "☕ 还没到9点，准备上班";
+                    document.getElementById('countdownDisplay').style.color = "#555";
+                } else {
+                    // 转换剩余毫秒为 时:分:秒
+                    let h = Math.floor(remainMs / (1000 * 60 * 60));
+                    let m = Math.floor((remainMs % (1000 * 60 * 60)) / (1000 * 60));
+                    let s = Math.floor((remainMs % (1000 * 60)) / 1000);
+                    
+                    // 补零补齐格式
+                    h = h < 10 ? '0' + h : h;
+                    m = m < 10 ? '0' + m : m;
+                    s = s < 10 ? '0' + s : s;
+                    
+                    document.getElementById('countdownDisplay').innerText = `⏳ 距下班还有：${h}:${m}:${s}`;
+                }
+            }, 50);
         });
     </script>
 </body>
