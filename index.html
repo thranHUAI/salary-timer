@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>薪水实时累加器</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 100px; background-color: #f4f4f9; }
+        .card { background: white; padding: 30px 50px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+        .input-group { margin: 15px 0; display: flex; justify-content: space-between; width: 280px; font-size: 16px;}
+        input { width: 100px; padding: 4px; text-align: center; }
+        button { margin-top: 20px; padding: 10px 30px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; }
+        button:hover { background-color: #218838; }
+        .result { margin-top: 40px; font-size: 20px; color: #555; }
+        .money { font-size: 54px; font-weight: bold; color: #dc3545; margin-top: 10px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>⏱️ 搞钱进度条</h2>
+        <div class="input-group">
+            <label>当前月份：</label>
+            <input type="number" id="month" value="4" min="1" max="12">
+        </div>
+        <div class="input-group">
+            <label>本月工作天数：</label>
+            <input type="number" id="days" value="21" min="1" max="31">
+        </div>
+        <div class="input-group">
+            <label>月薪 (元)：</label>
+            <input type="number" id="salary" value="10000" min="0">
+        </div>
+        <button id="startBtn">开始打工</button>
+
+        <div class="result">
+            本次运行已赚：
+            <div class="money" id="moneyDisplay">0.0000</div>
+        </div>
+    </div>
+
+    <script>
+        let timer;
+        let earned = 0;
+        
+        document.getElementById('startBtn').addEventListener('click', function() {
+            const days = parseFloat(document.getElementById('days').value);
+            const salary = parseFloat(document.getElementById('salary').value);
+            
+            if (isNaN(days) || isNaN(salary) || days <= 0) {
+                alert("请输入有效的天数和月薪");
+                return;
+            }
+
+            // 假设每天工作 8 小时，计算每秒薪资
+            const secondsPerDay = 8 * 3600;
+            const moneyPerSecond = salary / (days * secondsPerDay);
+            
+            // 为了让数字滚动得更丝滑，每 0.05 秒（50毫秒）刷新一次
+            const refreshRate = 50; 
+            const moneyPerTick = moneyPerSecond * (refreshRate / 1000);
+
+            const display = document.getElementById('moneyDisplay');
+            const btn = document.getElementById('startBtn');
+            
+            // 暂停/继续逻辑
+            if (timer) {
+                clearInterval(timer);
+                btn.innerText = "继续打工";
+                btn.style.backgroundColor = "#007bff";
+                timer = null;
+                return;
+            }
+
+            btn.innerText = "摸鱼暂停";
+            btn.style.backgroundColor = "#ffc107";
+            
+            timer = setInterval(() => {
+                earned += moneyPerTick;
+                // 保留4位小数，看着钱一直跳动
+                display.innerText = earned.toFixed(4); 
+            }, refreshRate);
+        });
+    </script>
+</body>
+</html>
