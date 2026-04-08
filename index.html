@@ -3,48 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>打工人搞钱双仪表盘</title>
+    <title>打工人搞钱仪表盘</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 30px; background-color: #f4f4f9; margin: 0; }
         
         /* 设置卡片 */
-        .card-setup { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 680px; text-align: center; margin-bottom: 30px; }
+        .card-setup { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 800px; text-align: center; margin-bottom: 30px; }
         .setup-header { display: flex; align-items: center; justify-content: center; margin-bottom: 20px;}
         h2 { margin: 0; color: #333; font-size: 20px;}
         .inputs-container { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;}
-        .input-group { display: flex; align-items: center; font-size: 15px; color: #555; width: 45%; }
+        .input-group { display: flex; align-items: center; font-size: 15px; color: #555; width: calc(50% - 15px); min-width: 260px;}
         .input-group label { width: 140px; text-align: right; margin-right: 10px; }
-        input { width: 100px; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+        input { flex-grow: 1; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
         
         button { margin-top: 25px; width: 100%; padding: 15px; background-color: #5aa469; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
         button:hover { background-color: #488a55; }
 
         /* 仪表盘容器 */
-        #dashboards { display: none; width: 100%; max-width: 900px; justify-content: space-between; gap: 20px; flex-direction: row;}
-        .card-dash { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 48%; text-align: center;}
+        #dashboards { display: none; width: 100%; max-width: 1100px; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .card-dash { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 300px; flex-grow: 1; max-width: 380px; text-align: center;}
         
-        /* 左侧：今日进度 */
+        /* 通用与局部样式 */
         .highlight { color: #d93025; font-weight: bold; font-size: 16px; }
         .progress-container { width: 100%; background-color: #e9ecef; border-radius: 10px; margin-top: 20px; height: 24px; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
         .progress-bar { height: 100%; background-color: #5aa469; width: 0%; transition: width 0.1s linear; }
+        .progress-bar-orange { height: 100%; background-color: #f77f00; width: 0%; transition: width 0.1s linear; }
         .progress-text { position: absolute; width: 100%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; color: #333; top: 0; left: 0; }
         .countdown { margin-top: 15px; font-size: 16px; font-weight: bold; color: #1a73e8; }
         .money-display { font-size: 42px; font-weight: bold; color: #d93025; margin-top: 10px; font-family: monospace; }
+        .gold-display { font-size: 32px; font-weight: bold; color: #ff6b81; margin-top: 10px; font-family: monospace; }
+        .orange-display { font-size: 32px; font-weight: bold; color: #f77f00; margin-top: 10px; font-family: monospace; }
         
-        /* 右侧：月度饼状图 */
+        /* 饼状图 */
         .pie-chart-container { position: relative; width: 160px; height: 160px; margin: 30px auto 20px; }
         .pie-chart { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#ffe4ec 100%, #ffe4ec 0%); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: background 0.1s linear;}
-        /* 饼图中心的白色遮罩和文字，做成环形图的视觉效果 */
         .pie-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90px; height: 90px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #ff6b81; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);}
-
-        .gold-display { font-size: 32px; font-weight: bold; color: #ff6b81; margin-top: 10px; font-family: monospace; }
-        
-        @media (max-width: 700px) {
-            .card-setup { width: 90%; }
-            .input-group { width: 100%; }
-            #dashboards { flex-direction: column; width: 100%; align-items: center;}
-            .card-dash { width: 90%; margin-bottom: 20px;}
-        }
     </style>
 </head>
 <body>
@@ -53,8 +46,10 @@
         <div class="inputs-container">
             <div class="input-group"><label>当前月份：</label><input type="number" id="monthInput" min="1" max="12" placeholder="如: 4"></div>
             <div class="input-group"><label>本月排班天数：</label><input type="number" id="days" min="1" max="31" placeholder="如: 23"></div>
-            <div class="input-group"><label>税后月薪 (元)：</label><input type="number" id="salary" min="0" placeholder="如: 8000"></div>
+            <div class="input-group"><label>月薪 (元)：</label><input type="number" id="salary" min="0" placeholder="如: 10000"></div>
             <div class="input-group"><label>每月发薪日：</label><input type="number" id="paydayNum" min="1" max="31" placeholder="如: 15"></div>
+            <div class="input-group"><label>心愿物品名称：</label><input type="text" id="wishName" placeholder="如: 旅游基金"></div>
+            <div class="input-group"><label>物品价格 (元)：</label><input type="number" id="wishPrice" min="0" placeholder="如: 5000"></div>
         </div>
         <button id="startBtn">开启搞钱模式</button>
     </div>
@@ -89,6 +84,22 @@
             <div class="gold-display" id="monthlyMoneyDisplay">0.00</div>
         </div>
 
+        <div class="card-dash" id="wishDash" style="display: none;">
+            <h2>🎁 心愿清空进度</h2>
+            <div style="font-size:14px; color:#666; margin-top: 15px;">
+                目标：<span id="wishNameDisplay" style="font-weight: bold; color: #333;">--</span> 
+                (<span id="wishPriceDisplay">0</span> 元)
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar-orange" id="wishProgressBar"></div>
+                <div class="progress-text" id="wishProgressText">0%</div>
+            </div>
+
+            <div style="margin-top: 30px; color: #555; font-size: 14px;">当前月薪可覆盖进度，已攒：</div>
+            <div class="orange-display" id="wishMoneyDisplay">0.00</div>
+        </div>
+
     </div>
 
     <script>
@@ -98,11 +109,13 @@
             const days = parseFloat(document.getElementById('days').value);
             const salary = parseFloat(document.getElementById('salary').value);
             const paydayNum = parseInt(document.getElementById('paydayNum').value);
-            // 获取用户输入的月份，未输入则默认使用当前真实月份
             let currentMonthNum = parseInt(document.getElementById('monthInput').value);
             
+            const wishName = document.getElementById('wishName').value || '目标物品';
+            const wishPrice = parseFloat(document.getElementById('wishPrice').value);
+            
             if (isNaN(days) || isNaN(salary) || days <= 0 || isNaN(paydayNum)) {
-                alert("请输入有效的数值哦");
+                alert("请输入有效的基础工作数值哦");
                 return;
             }
 
@@ -112,12 +125,20 @@
             this.parentElement.style.display = 'none';
             document.getElementById('dashboards').style.display = 'flex';
 
+            // 处理心愿单面板显示逻辑
+            const wishDash = document.getElementById('wishDash');
+            if (!isNaN(wishPrice) && wishPrice > 0) {
+                wishDash.style.display = 'block';
+                document.getElementById('wishNameDisplay').innerText = wishName;
+                document.getElementById('wishPriceDisplay').innerText = wishPrice;
+            } else {
+                wishDash.style.display = 'none';
+            }
+
             if (timer) clearInterval(timer);
 
             timer = setInterval(() => {
                 const now = new Date();
-                
-                // 如果用户没有输入月份，获取系统当前月份（0-11，所以+1）
                 const activeMonth = isNaN(currentMonthNum) ? now.getMonth() : currentMonthNum - 1;
                 
                 // === 模块 1：今日进度 ===
@@ -167,12 +188,23 @@
                 if(monthPercent > 100) monthPercent = 100;
                 if(monthPercent < 0) monthPercent = 0;
 
-                // 更新饼状图（环形图）填充和文字
                 document.getElementById('pieChart').style.background = `conic-gradient(#ff6b81 0%, #ff6b81 ${monthPercent}%, #ffe4ec ${monthPercent}%, #ffe4ec 100%)`;
                 document.getElementById('piePercentText').innerText = monthPercent.toFixed(1) + '%';
                 
                 const monthlyEarned = (monthPercent / 100) * salary;
                 document.getElementById('monthlyMoneyDisplay').innerText = monthlyEarned.toFixed(2);
+
+                // === 模块 3：心愿进度 ===
+                if (!isNaN(wishPrice) && wishPrice > 0) {
+                    let wishPercent = (monthlyEarned / wishPrice) * 100;
+                    if (wishPercent > 100) wishPercent = 100;
+                    
+                    document.getElementById('wishProgressBar').style.width = wishPercent + '%';
+                    document.getElementById('wishProgressText').innerText = wishPercent.toFixed(1) + '%';
+                    
+                    // 心愿金额直接展示当前月度已积攒的金额，视觉上同步增长
+                    document.getElementById('wishMoneyDisplay').innerText = monthlyEarned.toFixed(2);
+                }
 
             }, 50);
         });
