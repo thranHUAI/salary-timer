@@ -14,11 +14,12 @@
         
         h2 { margin: 0 0 20px 0; color: #333; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 8px;}
         
-        /* 输入框样式 */
+        /* 输入框及防呆错误样式 */
         .input-group { display: flex; align-items: center; font-size: 14px; color: #555; margin-bottom: 12px; justify-content: space-between;}
         .input-group label { text-align: left; }
-        input { width: 120px; padding: 8px; text-align: center; border: 1px solid #ddd; border-radius: 6px; outline: none; }
+        input { width: 120px; padding: 8px; text-align: center; border: 1px solid #ddd; border-radius: 6px; outline: none; transition: all 0.3s; }
         input:focus { border-color: #1a73e8; }
+        .input-error { border-color: #d93025 !important; background-color: #ffeaea; }
         
         button { margin-top: 15px; width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: opacity 0.2s; }
         button:hover { opacity: 0.9; }
@@ -125,18 +126,31 @@
         // 状态记录
         let active1 = false, active2 = false, active3 = false;
         
-        // 模块 1 参数
+        // 数据变量
         let sysDays1, sysSalary1, dailySalary1;
-        // 模块 2 参数
         let sysMonth2, sysSalary2, sysPayday2;
-        // 模块 3 参数
         let sysMonth3, sysSalary3, sysWishPrice3;
 
-        // 绑定按钮 1
+        // 核心校验功能（空值闪红框提示）
+        function validateInput(id) {
+            const el = document.getElementById(id);
+            const val = parseFloat(el.value);
+            if (isNaN(val) || val <= 0) {
+                el.classList.add('input-error');
+                setTimeout(() => el.classList.remove('input-error'), 1200); // 1.2秒后恢复正常
+                return false;
+            }
+            return true;
+        }
+
+        // ====== 绑定按钮 1 ======
         document.getElementById('btn1').addEventListener('click', function() {
+            const vDays = validateInput('days1');
+            const vSalary = validateInput('salary1');
+            if (!vDays || !vSalary) return; // 如果没填，直接终止运行，输入框会闪红
+            
             sysDays1 = parseFloat(document.getElementById('days1').value);
             sysSalary1 = parseFloat(document.getElementById('salary1').value);
-            if (isNaN(sysDays1) || isNaN(sysSalary1) || sysDays1 <= 0) return alert("请输入有效数值");
             
             dailySalary1 = sysSalary1 / sysDays1;
             document.getElementById('dailySalary1').innerText = dailySalary1.toFixed(2);
@@ -146,27 +160,33 @@
             active1 = true;
         });
 
-        // 绑定按钮 2
+        // ====== 绑定按钮 2 ======
         document.getElementById('btn2').addEventListener('click', function() {
+            const vSalary = validateInput('salary2');
+            const vPayday = validateInput('payday2');
+            if (!vSalary || !vPayday) return;
+
             let m2 = parseInt(document.getElementById('month2').value);
             sysMonth2 = isNaN(m2) ? new Date().getMonth() : m2 - 1;
             sysSalary2 = parseFloat(document.getElementById('salary2').value);
             sysPayday2 = parseInt(document.getElementById('payday2').value);
-            if (isNaN(sysSalary2) || isNaN(sysPayday2)) return alert("请输入有效数值");
             
             document.getElementById('setup2').classList.add('hidden');
             document.getElementById('dash2').classList.remove('hidden');
             active2 = true;
         });
 
-        // 绑定按钮 3
+        // ====== 绑定按钮 3 ======
         document.getElementById('btn3').addEventListener('click', function() {
+            const vSalary = validateInput('salary3');
+            const vPrice = validateInput('wishPrice3');
+            if (!vSalary || !vPrice) return;
+
             let m3 = parseInt(document.getElementById('month3').value);
             sysMonth3 = isNaN(m3) ? new Date().getMonth() : m3 - 1;
             sysSalary3 = parseFloat(document.getElementById('salary3').value);
             sysWishPrice3 = parseFloat(document.getElementById('wishPrice3').value);
-            let wName = document.getElementById('wishName3').value || '目标物品';
-            if (isNaN(sysSalary3) || isNaN(sysWishPrice3) || sysWishPrice3 <= 0) return alert("请输入有效数值");
+            let wName = document.getElementById('wishName3').value || '未知心愿';
             
             document.getElementById('wishNameDisplay3').innerText = wName;
             document.getElementById('wishPriceDisplay3').innerText = sysWishPrice3;
@@ -176,11 +196,10 @@
             active3 = true;
         });
 
-        // 全局统一定时器（每 50 毫秒刷新一次）
+        // ====== 全局统一定时器（每50毫秒刷新） ======
         setInterval(() => {
             const now = new Date();
 
-            // 刷新模块 1：今日进度
             if (active1) {
                 const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
                 const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 30, 0);
@@ -210,7 +229,6 @@
                 }
             }
 
-            // 刷新模块 2：月度财富
             if (active2) {
                 let paydayDate = new Date(now.getFullYear(), sysMonth2, sysPayday2);
                 if (now.getDate() > sysPayday2) {
@@ -219,4 +237,42 @@
                 const daysToPayday = Math.ceil((paydayDate - now) / (1000 * 60 * 60 * 24));
                 document.getElementById('countdown2').innerText = `💰 距发薪日还有：${daysToPayday} 天`;
 
-                const firstDayOfMonth = new Date(
+                const firstDayOfMonth = new Date(now.getFullYear(), sysMonth2, 1);
+                const nextMonthFirstDay = new Date(now.getFullYear(), sysMonth2 + 1, 1);
+                const monthTotalMs = nextMonthFirstDay - firstDayOfMonth;
+                const monthPassedMs = now - firstDayOfMonth;
+                
+                let monthPercent = (monthPassedMs / monthTotalMs) * 100;
+                if(monthPercent > 100) monthPercent = 100;
+                if(monthPercent < 0) monthPercent = 0;
+
+                document.getElementById('pieChart2').style.background = `conic-gradient(#ff6b81 0%, #ff6b81 ${monthPercent}%, #ffe4ec ${monthPercent}%, #ffe4ec 100%)`;
+                document.getElementById('piePercentText2').innerText = monthPercent.toFixed(1) + '%';
+                
+                const monthlyEarned = (monthPercent / 100) * sysSalary2;
+                document.getElementById('moneyDisplay2').innerText = monthlyEarned.toFixed(2);
+            }
+
+            if (active3) {
+                const firstDayOfMonth = new Date(now.getFullYear(), sysMonth3, 1);
+                const nextMonthFirstDay = new Date(now.getFullYear(), sysMonth3 + 1, 1);
+                const monthTotalMs = nextMonthFirstDay - firstDayOfMonth;
+                const monthPassedMs = now - firstDayOfMonth;
+                
+                let monthPercent = (monthPassedMs / monthTotalMs) * 100;
+                if(monthPercent > 100) monthPercent = 100;
+                if(monthPercent < 0) monthPercent = 0;
+                
+                const currentMonthEarned = (monthPercent / 100) * sysSalary3;
+                let wishPercent = (currentMonthEarned / sysWishPrice3) * 100;
+                if (wishPercent > 100) wishPercent = 100;
+                
+                document.getElementById('progressBar3').style.width = wishPercent + '%';
+                document.getElementById('progressText3').innerText = wishPercent.toFixed(1) + '%';
+                document.getElementById('moneyDisplay3').innerText = currentMonthEarned.toFixed(2);
+            }
+
+        }, 50);
+    </script>
+</body>
+</html>
