@@ -29,10 +29,17 @@
 
         /* 仪表盘通用及局部样式 */
         .highlight { color: #d93025; font-weight: bold; font-size: 16px; }
+        
+        /* 大进度条 */
         .progress-container { width: 100%; background-color: #e9ecef; border-radius: 10px; margin-top: 20px; height: 24px; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
         .progress-bar-green { height: 100%; background-color: #5aa469; width: 0%; transition: width 0.1s linear; }
-        .progress-bar-orange { height: 100%; background-color: #f77f00; width: 0%; transition: width 0.1s linear; }
         .progress-text { position: absolute; width: 100%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; color: #333; top: 0; left: 0; }
+        
+        /* 小进度条（用于心愿单双排） */
+        .progress-container-sm { width: 100%; background-color: #e9ecef; border-radius: 8px; margin-top: 5px; height: 18px; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+        .progress-bar-orange { height: 100%; background-color: #f77f00; width: 0%; transition: width 0.1s linear; }
+        .progress-text-sm { position: absolute; width: 100%; text-align: center; line-height: 18px; font-size: 11px; font-weight: bold; color: #333; top: 0; left: 0; }
+
         .countdown { margin-top: 15px; font-size: 15px; font-weight: bold; }
         
         .display-num { font-size: 38px; font-weight: bold; margin-top: 10px; font-family: monospace; }
@@ -100,6 +107,7 @@
             
             <div id="setup3">
                 <div class="input-group"><label>当前月份：</label><input type="number" id="month3" placeholder="如: 4"></div>
+                <div class="input-group"><label>本月排班天数：</label><input type="number" id="days3" placeholder="如: 23"></div>
                 <div class="input-group"><label>月薪 (元)：</label><input type="number" id="salary3" placeholder="如: 10000"></div>
                 <div class="input-group"><label>心愿名称：</label><input type="text" id="wishName3" placeholder="如: 旅游基金"></div>
                 <div class="input-group"><label>目标价格 (元)：</label><input type="number" id="wishPrice3" placeholder="如: 5000"></div>
@@ -111,12 +119,23 @@
                     目标：<span id="wishNameDisplay3" style="font-weight: bold; color: #333;">--</span> 
                     (<span id="wishPriceDisplay3">0</span> 元)
                 </div>
-                <div class="progress-container">
-                    <div class="progress-bar-orange" id="progressBar3"></div>
-                    <div class="progress-text" id="progressText3">0%</div>
+
+                <div style="text-align: left; font-size: 13px; color: #555; margin-top: 15px;">今日攒钱进度：</div>
+                <div class="progress-container-sm">
+                    <div class="progress-bar-orange" id="dailyWishProgressBar"></div>
+                    <div class="progress-text-sm" id="dailyWishProgressText">0%</div>
                 </div>
-                <div style="margin-top: 30px; color: #555; font-size: 14px;">本月薪资已攒进度：</div>
-                <div class="display-num text-orange" id="moneyDisplay3">0.00</div>
+
+                <div style="text-align: left; font-size: 13px; color: #555; margin-top: 10px;">本月攒钱进度：</div>
+                <div class="progress-container-sm">
+                    <div class="progress-bar-orange" id="monthlyWishProgressBar"></div>
+                    <div class="progress-text-sm" id="monthlyWishProgressText">0%</div>
+                </div>
+
+                <div style="margin-top: 25px; color: #555; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                    <div>相当于 <span id="equivalentDaysDisplay" style="font-weight: bold; color: #f77f00; font-size: 18px;">0.0</span> 天的打工</div>
+                    <div>本月已攒：<span class="display-num text-orange" id="moneyDisplay3" style="font-size: 28px;">0.00</span></div>
+                </div>
             </div>
         </div>
 
@@ -129,7 +148,7 @@
         // 数据变量
         let sysDays1, sysSalary1, dailySalary1;
         let sysMonth2, sysSalary2, sysPayday2;
-        let sysMonth3, sysSalary3, sysWishPrice3;
+        let sysMonth3, sysDays3, sysSalary3, dailySalary3, sysWishPrice3;
 
         // 核心校验功能（空值闪红框提示）
         function validateInput(id) {
@@ -137,7 +156,7 @@
             const val = parseFloat(el.value);
             if (isNaN(val) || val <= 0) {
                 el.classList.add('input-error');
-                setTimeout(() => el.classList.remove('input-error'), 1200); // 1.2秒后恢复正常
+                setTimeout(() => el.classList.remove('input-error'), 1200); 
                 return false;
             }
             return true;
@@ -145,9 +164,7 @@
 
         // ====== 绑定按钮 1 ======
         document.getElementById('btn1').addEventListener('click', function() {
-            const vDays = validateInput('days1');
-            const vSalary = validateInput('salary1');
-            if (!vDays || !vSalary) return; // 如果没填，直接终止运行，输入框会闪红
+            if (!validateInput('days1') || !validateInput('salary1')) return;
             
             sysDays1 = parseFloat(document.getElementById('days1').value);
             sysSalary1 = parseFloat(document.getElementById('salary1').value);
@@ -162,9 +179,7 @@
 
         // ====== 绑定按钮 2 ======
         document.getElementById('btn2').addEventListener('click', function() {
-            const vSalary = validateInput('salary2');
-            const vPayday = validateInput('payday2');
-            if (!vSalary || !vPayday) return;
+            if (!validateInput('salary2') || !validateInput('payday2')) return;
 
             let m2 = parseInt(document.getElementById('month2').value);
             sysMonth2 = isNaN(m2) ? new Date().getMonth() : m2 - 1;
@@ -178,18 +193,23 @@
 
         // ====== 绑定按钮 3 ======
         document.getElementById('btn3').addEventListener('click', function() {
-            const vSalary = validateInput('salary3');
-            const vPrice = validateInput('wishPrice3');
-            if (!vSalary || !vPrice) return;
+            if (!validateInput('days3') || !validateInput('salary3') || !validateInput('wishPrice3')) return;
 
             let m3 = parseInt(document.getElementById('month3').value);
             sysMonth3 = isNaN(m3) ? new Date().getMonth() : m3 - 1;
+            sysDays3 = parseFloat(document.getElementById('days3').value);
             sysSalary3 = parseFloat(document.getElementById('salary3').value);
             sysWishPrice3 = parseFloat(document.getElementById('wishPrice3').value);
             let wName = document.getElementById('wishName3').value || '未知心愿';
             
+            dailySalary3 = sysSalary3 / sysDays3;
+            
+            // 计算等价天数
+            let equivalentDays = (sysWishPrice3 / dailySalary3).toFixed(1);
+
             document.getElementById('wishNameDisplay3').innerText = wName;
             document.getElementById('wishPriceDisplay3').innerText = sysWishPrice3;
+            document.getElementById('equivalentDaysDisplay').innerText = equivalentDays;
             
             document.getElementById('setup3').classList.add('hidden');
             document.getElementById('dash3').classList.remove('hidden');
@@ -254,6 +274,23 @@
             }
 
             if (active3) {
+                // 1. 计算今日赚取的钱用来填充今日进度条
+                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0);
+                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 30, 0);
+                const totalWorkMs = endTime - startTime;
+                let elapsedMs = now - startTime;
+                if (elapsedMs < 0) elapsedMs = 0;
+                if (elapsedMs > totalWorkMs) elapsedMs = totalWorkMs;
+                
+                const earnedToday = (elapsedMs / totalWorkMs) * dailySalary3;
+                let dailyWishPercent = (earnedToday / sysWishPrice3) * 100;
+                if (dailyWishPercent > 100) dailyWishPercent = 100;
+                
+                document.getElementById('dailyWishProgressBar').style.width = dailyWishPercent + '%';
+                document.getElementById('dailyWishProgressText').innerText = dailyWishPercent.toFixed(1) + '%';
+
+
+                // 2. 计算本月累积的钱用来填充月度进度条
                 const firstDayOfMonth = new Date(now.getFullYear(), sysMonth3, 1);
                 const nextMonthFirstDay = new Date(now.getFullYear(), sysMonth3 + 1, 1);
                 const monthTotalMs = nextMonthFirstDay - firstDayOfMonth;
@@ -264,11 +301,12 @@
                 if(monthPercent < 0) monthPercent = 0;
                 
                 const currentMonthEarned = (monthPercent / 100) * sysSalary3;
-                let wishPercent = (currentMonthEarned / sysWishPrice3) * 100;
-                if (wishPercent > 100) wishPercent = 100;
+                let monthlyWishPercent = (currentMonthEarned / sysWishPrice3) * 100;
+                if (monthlyWishPercent > 100) monthlyWishPercent = 100;
                 
-                document.getElementById('progressBar3').style.width = wishPercent + '%';
-                document.getElementById('progressText3').innerText = wishPercent.toFixed(1) + '%';
+                document.getElementById('monthlyWishProgressBar').style.width = monthlyWishPercent + '%';
+                document.getElementById('monthlyWishProgressText').innerText = monthlyWishPercent.toFixed(1) + '%';
+                
                 document.getElementById('moneyDisplay3').innerText = currentMonthEarned.toFixed(2);
             }
 
